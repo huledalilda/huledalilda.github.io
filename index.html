@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>密码加盐哈希生成器</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 600px;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 28px;
+            position: relative;
+            padding-bottom: 10px;
+        }
+        
+        h1:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 3px;
+            background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+            border-radius: 3px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+        
+        button {
+            background: linear-gradient(to right, #0f2027, #203a43);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            font-weight: 600;
+            margin: 10px 5px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .result {
+            margin-top: 25px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            border-left: 5px solid #2c3e50;
+            text-align: left;
+        }
+        
+        .result h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .hash-display {
+            font-family: monospace;
+            font-size: 14px;
+            padding: 15px;
+            background-color: #2c3e50;
+            color: white;
+            border-radius: 8px;
+            margin: 15px 0;
+            overflow-x: auto;
+            word-break: break-all;
+        }
+        
+        .copy-btn {
+            background: #2c3e50;
+            padding: 8px 15px;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        
+        .instructions {
+            margin-top: 25px;
+            padding: 15px;
+            background-color: #e8f4fc;
+            border-radius: 8px;
+            text-align: left;
+            font-size: 14px;
+            border-left: 5px solid #3498db;
+        }
+        
+        .instructions h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .instructions ul {
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ddd;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #7f8c8d;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            color: #2c3e50;
+            border-bottom: 3px solid #2c3e50;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+            
+            input, button {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>密码加盐哈希生成器</h1>
+        
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab(0)">哈希生成</div>
+            <div class="tab" onclick="switchTab(1)">使用说明</div>
+        </div>
+        
+        <div class="tab-content active">
+            <div class="input-group">
+                <label for="password">密码：</label>
+                <input type="password" id="password" placeholder="输入您的密码">
+            </div>
+            
+            <div class="input-group">
+                <label for="salt">盐：</label>
+                <input type="text" id="salt" placeholder="输入盐值">
+            </div>
+            
+            <button onclick="generateHash()">生成哈希值</button>
+            <button onclick="clearFields()">清空输入</button>
+            
+            <div class="result" id="result" style="display: none;">
+                <h3>📋 哈希结果</h3>
+                <p><strong>密码：</strong> <span id="password-result"></span></p>
+                <p><strong>盐：</strong> <span id="salt-result"></span></p>
+                
+                <div>
+                    <p><strong>SHA-256哈希(十六进制)：</strong></p>
+                    <div class="hash-display" id="hex-hash-result"></div>
+                    <button class="copy-btn" onclick="copyText('hex-hash-result')">复制十六进制哈希</button>
+                </div>
+                
+                <div style="margin-top: 20px;">
+                    <p><strong>SHA-256哈希(Base64)：</strong></p>
+                    <div class="hash-display" id="base64-hash-result"></div>
+                    <button class="copy-btn" onclick="copyText('base64-hash-result')">复制Base64哈希</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tab-content">
+            <div class="instructions">
+                <h3>使用说明：</h3>
+                <ul>
+                    <li>输入您的密码和盐值</li>
+                    <li>点击"生成哈希值"按钮</li>
+                    <li>系统将使用SHA-256算法生成哈希值</li>
+                    <li>结果包含十六进制和Base64两种格式</li>
+                    <li>您可以复制任意一种格式的哈希值</li>
+                </ul>
+                
+                <h3>什么是密码加盐？</h3>
+                <p>密码加盐是一种安全技术，通过在密码中添加随机数据（盐）然后再进行哈希处理，以增加密码的安全性。这可以防止彩虹表攻击，并确保即使两个用户使用相同的密码，其哈希值也不同。</p>
+                
+                <h3>技术细节：</h3>
+                <ul>
+                    <li>使用SHA-256哈希算法</li>
+                    <li>密码和盐值使用UTF-8编码</li>
+                    <li>输出十六进制和Base64两种格式</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 切换标签页
+        function switchTab(index) {
+            const tabs = document.querySelectorAll('.tab');
+            const contents = document.querySelectorAll('.tab-content');
+            
+            tabs.forEach(tab => tab.classList.remove('active'));
+            contents.forEach(content => content.classList.remove('active'));
+            
+            tabs[index].classList.add('active');
+            contents[index].classList.add('active');
+        }
+        
+        // 使用SHA-256算法生成哈希
+        async function hashPassword(password, salt) {
+            // 将盐添加到密码中
+            const saltedPassword = password + salt;
+            
+            // 编码为UTF-8
+            const encoder = new TextEncoder();
+            const data = encoder.encode(saltedPassword);
+            
+            // 计算SHA-256哈希
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            
+            // 转换为字节数组
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            
+            // 转换为十六进制字符串
+            const hexDigest = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            
+            // 转换为Base64字符串
+            const base64Digest = btoa(String.fromCharCode.apply(null, hashArray));
+            
+            return { hexDigest, base64Digest };
+        }
+        
+        // 生成哈希
+        async function generateHash() {
+            const password = document.getElementById('password').value;
+            const salt = document.getElementById('salt').value;
+            
+            if (!password || !salt) {
+                alert('请输入密码和盐值！');
+                return;
+            }
+            
+            try {
+                const { hexDigest, base64Digest } = await hashPassword(password, salt);
+                
+                // 显示结果
+                document.getElementById('password-result').textContent = password;
+                document.getElementById('salt-result').textContent = salt;
+                document.getElementById('hex-hash-result').textContent = hexDigest;
+                document.getElementById('base64-hash-result').textContent = base64Digest;
+                document.getElementById('result').style.display = 'block';
+                
+                // 滚动到结果区域
+                document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
+            } catch (error) {
+                console.error('生成哈希时出错:', error);
+                alert('生成哈希时出错，请重试！');
+            }
+        }
+        
+        // 清空输入字段
+        function clearFields() {
+            document.getElementById('password').value = '';
+            document.getElementById('salt').value = '';
+            document.getElementById('result').style.display = 'none';
+        }
+        
+        // 复制文本到剪贴板
+        function copyText(elementId) {
+            const text = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('已复制到剪贴板！');
+            }).catch(err => {
+                console.error('复制失败:', err);
+                alert('复制失败，请手动复制。');
+            });
+        }
+        
+        // 支持按Enter键生成哈希
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('salt').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    generateHash();
+                }
+            });
+            
+            document.getElementById('password').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    generateHash();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
